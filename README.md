@@ -14,7 +14,7 @@ airflow variables set WEATHER_API_KEY <your_api_key>
 ```
 
 The pipeline is four tasks. Table creation and API health check run in parallel because there
-is no reason they shouldn't. Then extract, then write to DB. Simple.
+is no reason they shouldn't. Then extract, then write to DB.
 
 Process and inject are one task, not two. Splitting them meant passing data through xcom and
 then interpolating it into a SQL string — that is just SQL injection waiting to happen. One
