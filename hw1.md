@@ -13,7 +13,7 @@ airflow connections add weather_conn \
     --conn-type sqlite --conn-host $(pwd)/weather.db
 airflow connections add openweather_conn \
     --conn-type http --conn-host https://api.openweathermap.org
-airflow variables set WEATHER_API_KEY PLACEHOLDER
+airflow variables set WEATHER_API_KEY *APIKEY*
 ```
 
 Run:
