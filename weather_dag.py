@@ -1,4 +1,3 @@
-import sqlite3
 from datetime import datetime
 
 import requests
@@ -7,8 +6,7 @@ from airflow.models import Variable
 from airflow.operators.python import PythonOperator
 from airflow.providers.common.sql.operators.sql import SQLExecuteQueryOperator
 from airflow.providers.http.sensors.http import HttpSensor
-
-DB_PATH = "PLACEHOLDER"
+from airflow.providers.postgres.hooks.postgres import PostgresHook
 
 # first city is also used by the sensor to check api availability
 CITIES = [
@@ -26,32 +24,32 @@ def _fetch_and_store(ds, **_):
     # this makes historical backfills return data for the correct date
     dt = int(datetime.strptime(ds, "%Y-%m-%d").timestamp())
 
-    with sqlite3.connect(DB_PATH) as conn:
-        for city in CITIES:
-            resp = requests.get(
-                "https://api.openweathermap.org/data/3.0/onecall/timemachine",
-                params={
-                    "lat": city["lat"],
-                    "lon": city["lon"],
-                    "dt": dt,
-                    "appid": api_key,
-                },
-                timeout=10,
-            )
-            resp.raise_for_status()
-            # timemachine returns a "data" array, we take the first (and only) element
-            data = resp.json()["data"][0]
-            conn.execute(
-                "INSERT INTO measures (timestamp, city, temp, humidity, cloudiness, wind_speed) VALUES (?, ?, ?, ?, ?, ?)",
-                (
-                    data["dt"],
-                    city["name"],
-                    data["temp"],
-                    data["humidity"],
-                    data["clouds"],
-                    data["wind_speed"],
-                ),
-            )
+    hook = PostgresHook(postgres_conn_id="weather_conn")
+    for city in CITIES:
+        resp = requests.get(
+            "https://api.openweathermap.org/data/3.0/onecall/timemachine",
+            params={
+                "lat": city["lat"],
+                "lon": city["lon"],
+                "dt": dt,
+                "appid": api_key,
+            },
+            timeout=10,
+        )
+        resp.raise_for_status()
+        # timemachine returns a "data" array, we take the first (and only) element
+        data = resp.json()["data"][0]
+        hook.run(
+            "INSERT INTO measures (timestamp, city, temp, humidity, cloudiness, wind_speed) VALUES (%s, %s, %s, %s, %s, %s)",
+            parameters=(
+                data["dt"],
+                city["name"],
+                data["temp"],
+                data["humidity"],
+                data["clouds"],
+                data["wind_speed"],
+            ),
+        )
 
 
 with DAG(
