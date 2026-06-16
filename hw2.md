@@ -1,6 +1,6 @@
 # HW2 — reproduce
 
-Same DAG as HW1, now with TaskGroups per city (`extract → transform → branch → {normal_load | alert_and_load}`), XCom-passed payloads, wind-threshold branching, retries in `default_args`, and Celery as executor.
+Same DAG as HW1, now with TaskGroups per city (`extract → transform → branch → {normal_load | alert_load}`), XCom-passed payloads, wind-threshold branching (`WIND_ALERT_THRESHOLD = 10.0` m/s), retries in `default_args` (`retries=2`, `retry_delay=1min`), and Celery as executor.
 
 ## Setup
 
